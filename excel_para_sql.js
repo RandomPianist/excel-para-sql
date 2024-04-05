@@ -1,3 +1,9 @@
+/*
+EXCEL PARA SQL © 2024
+Desenvolvido por Reynolds Costa, no Notepad++
+O uso é permitido; a comercialização, proibida.
+*/
+
 function ExcelParaSQL(obj) {
 	let campos = new Array();
 	
@@ -26,6 +32,7 @@ function ExcelParaSQL(obj) {
 			if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
 				if (campos.indexOf(partes[0].trim()) > -1 || !campos.length) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
+				if (campos.indexOf(partes[0].trim()) == -1 && campos.length) console.warn('O campo "' + partes[0] + '" não foi encontrado e foi removido');
 			} else resultado.push(termo);
 		});
 		return resultado;
