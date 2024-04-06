@@ -13,28 +13,39 @@ function ExcelParaSQL(obj) {
 		let contA = 0;
 		let contB = 0;
 		for (let i = 0; i < texto.length; i++) {
-			switch(texto.substring(i, i + 1)) {
-				case char1:
-					contA++;
-					break;
-				case char2:
-					contB++;
-					break;
-			}
+			let ref = texto.substring(i, i + 1);
+			if (char1.indexOf(ref) > -1) contA++;
+			if (char2.indexOf(ref) > -1) contB++;
 		}
 		if (contA != contB + adc) erro = _erro;
 		return erro;
 	}
 
 	let like = function(arr, campos) {
+		let verificar = function(__campos, chave) {
+			let ret = true;
+			chave = chave.trim();
+			try {
+				if (__campos.indexOf(chave) == -1) {
+					console.warn('O campo "' + chave + '" não foi encontrado e foi removido');
+					ret = false;
+				}
+			} catch(err) {}
+			return ret;
+		}
+		
 		let resultado = new Array();
 		arr.forEach((termo) => {
-			if (termo.indexOf("=") > -1) {
+			if (termo.indexOf("<") > -1 || termo.indexOf(">") > -1) {
+				let operador = termo.indexOf("<") > -1 ? "<" : ">";
+				let partes = termo.split(operador);
+				operador = " " + operador + " ";
+				let aux = partes[1].replace("/", "");
+				if (aux != parseFloat(aux)) console.error("Os operadores >, >=, < e <= só estão disponíveis para valores numéricos");
+				else if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
+			} else if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
-				if (campos != null) {
-					if (campos.indexOf(partes[0].trim()) > -1) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
-					else console.warn('O campo "' + partes[0] + '" não foi encontrado e foi removido');
-				} else resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
+				if (verificar(campos, partes[0])) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
 			} else resultado.push(termo);
 		});
 		return resultado;
@@ -126,12 +137,17 @@ function ExcelParaSQL(obj) {
 			var pseudocodigo = (
 				funcoes ||
 				texto.indexOf(",") > -1 ||
-				texto.indexOf("=") > -1
+				texto.indexOf("<") > -1 ||
+				texto.indexOf("=") > -1 ||
+				texto.indexOf(">") > -1
 			);
+			
+			while (texto.indexOf(">=") > -1) texto = texto.replace(">=", ">/");
+			while (texto.indexOf("<=") > -1) texto = texto.replace("<=", "</");
 			
 			if (funcoes) {
 				erro = contagem(texto, "(", ")", "Número desigual de parênteses");
-				if (!erro) erro = contagem(texto, "=", ",", "Termos não declarados corretamente", 1);
+				if (!erro) erro = contagem(texto, "<=>", ",", "Termos não declarados corretamente", 1);
 			}
 		}
 		
@@ -160,24 +176,30 @@ function ExcelParaSQL(obj) {
 			try {
 				let texto_formatado = eval(texto);
 				let poss_col = new Array();
-				texto.split("=").forEach((aux) => {
-					aux = aux.split("[");
-					aux.forEach((aux2) => {
-						poss_col.push(aux2);
+				let poss_col2 = new Array();
+				["<", "=", ">"].forEach((operador) => {
+					texto.split(operador).forEach((aux) => {
+						aux = aux.split("[");
+						aux.forEach((aux2) => {
+							poss_col.push(aux2);
+						});
 					});
 				});
 				poss_col.forEach((coluna) => {
 					if (coluna.indexOf("'") > -1) {
 						let aux = coluna.split("'");
 						aux = aux[aux.length - 1];
-						if (eColuna(aux) && (_campos.indexOf(aux) > -1 || !_campos.length)) _campos_ret.push(aux);
+						if (eColuna(aux) && poss_col2.indexOf(aux) == -1 && (_campos.indexOf(aux) > -1 || !_campos.length)) poss_col2.push(aux);
 					}
 				});
 				texto = eval(
-					texto.replace(/e\(/g,  "e(['"   + _campos_ret.join("','") + "'],")
-						.replace(/ou\(/g,  "ou(['"  + _campos_ret.join("','") + "'],")
-						.replace(/nao\(/g, "nao(['" + _campos_ret.join("','") + "'],")
+					texto.replace(/e\(/g,  "e(['"   + poss_col2.join("','") + "'],")
+						.replace(/ou\(/g,  "ou(['"  + poss_col2.join("','") + "'],")
+						.replace(/nao\(/g, "nao(['" + poss_col2.join("','") + "'],")
 				);
+				poss_col2.forEach((coluna) => {
+					if (texto.indexOf(coluna) > -1) _campos_ret.push(coluna);
+				});
 			} catch(err) {
 				if (!pseudocodigo && _campos.length) {
 					while (texto.indexOf("'") > -1) texto = texto.replace("'", "");
@@ -191,6 +213,7 @@ function ExcelParaSQL(obj) {
 			}
 		}
 		if (!erro) {
+			while (texto.indexOf("()") > -1) texto = texto.replace("()", "0");
 			retorno = {
 				sql : texto,
 				campos : _campos_ret
