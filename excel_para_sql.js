@@ -5,7 +5,7 @@ O uso é permitido; a comercialização, proibida.
 */
 
 function ExcelParaSQL(obj) {
-	let campos = new Array();
+	let _campos = new Array();
 	
 	let contagem = function(texto, char1, char2, _erro, adc) {
 		if (adc === undefined) adc = 0;
@@ -26,13 +26,15 @@ function ExcelParaSQL(obj) {
 		return erro;
 	}
 
-	let like = function(arr) {
+	let like = function(arr, campos) {
 		let resultado = new Array();
 		arr.forEach((termo) => {
 			if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
-				if (campos.indexOf(partes[0].trim()) > -1 || !campos.length) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
-				if (campos.indexOf(partes[0].trim()) == -1 && campos.length) console.warn('O campo "' + partes[0] + '" não foi encontrado e foi removido');
+				if (campos != null) {
+					if (campos.indexOf(partes[0].trim()) > -1) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
+					else console.warn('O campo "' + partes[0] + '" não foi encontrado e foi removido');
+				} else resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
 			} else resultado.push(termo);
 		});
 		return resultado;
@@ -48,22 +50,35 @@ function ExcelParaSQL(obj) {
 		return true;
 	}
 	
-	this.e = function(arr) {
-		return "(" + like(arr).join(" AND ") + ")";
+	this.e = function(campos, arr) {
+		if (arr === undefined) {
+			arr = campos;
+			campos = null;
+		}
+		return "(" + like(arr, campos).join(" AND ") + ")";
 	}
 	
-	this.ou = function(arr) {
-		return "(" + like(arr).join(" OR ") + ")";
+	this.ou = function(campos, arr) {
+		if (arr === undefined) {
+			arr = campos;
+			campos = null;
+		}
+		return "(" + like(arr, campos).join(" OR ") + ")";
 	}
 	
-	this.nao = function(txt) {
-		return "NOT(" + like([txt])[0] + ")";
+	this.nao = function(campos, txt) {
+		if (txt === undefined) {
+			txt = campos;
+			campos = null;
+		}
+		return "NOT(" + like([txt], campos)[0] + ")";
 	}
 	
 	if (obj !== undefined) {
 		let separador = ",";
 		let erro = "";
 		let retorno = false;
+		let _campos_ret = new Array();
 		
 		if (typeof obj == "object") {
 			let aviso = "";
@@ -79,7 +94,7 @@ function ExcelParaSQL(obj) {
 			}
 			if (!erro) {
 				if (aux) erro = 'A chave "separador", se declarada, deve ser uma string de tamanho 1';
-				else separador = obj.separador;
+				else if (obj.separador !== undefined) separador = obj.separador;
 			}
 			if (!erro) {
 				if (["undefined", "object"].indexOf(typeof obj.campos) == -1) aux = true;
@@ -91,7 +106,7 @@ function ExcelParaSQL(obj) {
 					});
 				}
 				if (aux) erro = 'A chave "campos", se declarada, deve ser um array de colunas SQL';
-				else campos = obj.campos;
+				else if (obj.campos !== undefined) _campos = obj.campos;
 			}
 		} else erro = "Parâmetro não declarado corretamente";
 		
@@ -102,7 +117,7 @@ function ExcelParaSQL(obj) {
 				while (texto.indexOf(separador) > -1) texto = texto.replace(separador, ",");
 			}
 			
-			var funcoes = (
+			const funcoes = (
 				texto.indexOf("e(") > -1 ||
 				texto.indexOf("ou(") > -1 ||
 				texto.indexOf("nao(") > -1
@@ -143,21 +158,44 @@ function ExcelParaSQL(obj) {
 						.replace(/ou\(/g,  "new ExcelParaSQL().ou(")
 						.replace(/nao\(/g, "new ExcelParaSQL().nao(");
 			try {
-				texto = eval(texto);
-				while (texto.indexOf("()") > -1) texto = texto.replace("()", "0");
+				let texto_formatado = eval(texto);
+				let poss_col = new Array();
+				texto.split("=").forEach((aux) => {
+					aux = aux.split("[");
+					aux.forEach((aux2) => {
+						poss_col.push(aux2);
+					});
+				});
+				poss_col.forEach((coluna) => {
+					if (coluna.indexOf("'") > -1) {
+						let aux = coluna.split("'");
+						aux = aux[aux.length - 1];
+						if (eColuna(aux) && (_campos.indexOf(aux) > -1 || !_campos.length)) _campos_ret.push(aux);
+					}
+				});
+				texto = eval(
+					texto.replace(/e\(/g,  "e(['"   + _campos_ret.join("','") + "'],")
+						.replace(/ou\(/g,  "ou(['"  + _campos_ret.join("','") + "'],")
+						.replace(/nao\(/g, "nao(['" + _campos_ret.join("','") + "'],")
+				);
 			} catch(err) {
-				if (!pseudocodigo && campos.length) {
+				if (!pseudocodigo && _campos.length) {
 					while (texto.indexOf("'") > -1) texto = texto.replace("'", "");
 					let resultado = new Array();
-					campos.forEach((campo) => {
+					_campos.forEach((campo) => {
 						resultado.push(campo + " LIKE '%" + texto + "%'");
 					});
 					texto = resultado.join(" OR ");
+					_campos_ret = _campos;
 				} else erro = "Erro desconhecido";
 			}
 		}
-		if (erro) console.error(erro);
-		else retorno = texto;
+		if (!erro) {
+			retorno = {
+				sql : texto,
+				campos : _campos_ret
+			};
+		} else console.error(erro);
 		return retorno;
 	}
 }
