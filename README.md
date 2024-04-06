@@ -4,7 +4,7 @@ Função em javascript que converte a sintaxe das funções E, OU e NÃO do Exce
 <br />
 Uso:
 <br />
-let texto = ExcelParaSQL({
+ExcelParaSQL({
 <br />
   &nbsp;&nbsp;&nbsp;&nbsp;conteudo : texto, // string obrigatória
 <br />
@@ -13,3 +13,5 @@ let texto = ExcelParaSQL({
   &nbsp;&nbsp;&nbsp;&nbsp;campos : [] // array de strings com os campos que serão permitidos. Padrão array vazio, permite todos
 <br />
 });
+<br /><br />
+A função retorna a chave "sql", que é a condição SQL respectiva e "campos" que são as colunas que a função encontrou na string.
