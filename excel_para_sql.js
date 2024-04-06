@@ -24,7 +24,7 @@ function ExcelParaSQL(obj) {
 	let like = function(arr, campos) {
 		let verificar = function(__campos, chave) {
 			let ret = true;
-			chave = chave.trim();
+			chave = chave.trim().replace("(", "").replace(")", "");
 			try {
 				if (__campos.indexOf(chave) == -1) {
 					console.warn('O campo "' + chave + '" não foi encontrado e foi removido');
@@ -40,9 +40,9 @@ function ExcelParaSQL(obj) {
 				let operador = termo.indexOf("<") > -1 ? "<" : ">";
 				let partes = termo.split(operador);
 				operador = " " + operador + " ";
-				let aux = partes[1].replace("/", "");
+				let aux = partes[1].replace("/", "").replace("(", "").replace(")", "");
 				if (aux != parseFloat(aux)) console.error("Os operadores >, >=, < e <= só estão disponíveis para valores numéricos");
-				else if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
+				if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
 			} else if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
 				if (verificar(campos, partes[0])) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
@@ -213,7 +213,8 @@ function ExcelParaSQL(obj) {
 			}
 		}
 		if (!erro) {
-			while (texto.indexOf("()") > -1) texto = texto.replace("()", "0");
+			while (texto.indexOf("()") > -1) texto = texto.replace("()", "1");
+			while (texto.indexOf("  ") > -1) texto = texto.replace("  ", " ");
 			retorno = {
 				sql : texto,
 				campos : _campos_ret
