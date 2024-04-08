@@ -45,7 +45,7 @@ function ExcelParaSQL(obj) {
 				if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
 			} else if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
-				if (verificar(campos, partes[0])) resultado.push(partes[0] + " LIKE '%" + partes[1] + "%'");
+				if (verificar(campos, partes[0])) resultado.push(partes[0] + " LIKE '%" + partes[1].split(" ").join("%") + "%'");
 			} else resultado.push(termo);
 		});
 		return resultado;
