@@ -1,9 +1,3 @@
-/*
-EXCEL PARA SQL © 2024
-Desenvolvido por Reynolds Costa, no Notepad++
-O uso é permitido; a comercialização, proibida.
-*/
-
 function ExcelParaSQL(obj) {
 	let _campos = new Array();
 	
@@ -45,7 +39,7 @@ function ExcelParaSQL(obj) {
 				if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
 			} else if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
-				if (verificar(campos, partes[0])) resultado.push(partes[0] + " LIKE '%" + partes[1].split(" ").join("%") + "%'");
+				if (verificar(campos, partes[0])) resultado.push(parseInt(partes[1]) == partes[1] ? partes[0] + "=" + partes[1] : partes[0] + " LIKE '%" + partes[1].split(" ").join("%") + "%'");
 			} else resultado.push(termo);
 		});
 		return resultado;
@@ -59,6 +53,16 @@ function ExcelParaSQL(obj) {
 			if (!/^[a-zA-Z0-9_$]/.test(name[i])) return false;
 		}
 		return true;
+	}
+	
+	const todos = function(txt, arr) {
+		txt = txt.toString();
+		while (txt.indexOf("'") > -1) txt = txt.replace("'", "");
+		let resultado = new Array();
+		arr.forEach((campo) => {
+			resultado.push(campo + " LIKE '%" + txt + "%'");
+		});
+		return [resultado.join(" OR "), arr];
 	}
 	
 	this.e = function(campos, arr) {
@@ -142,6 +146,8 @@ function ExcelParaSQL(obj) {
 				texto.indexOf(">") > -1
 			);
 			
+			if (!funcoes && pseudocodigo) texto = "e(" + texto + ")";
+			
 			while (texto.indexOf(">=") > -1) texto = texto.replace(">=", ">/");
 			while (texto.indexOf("<=") > -1) texto = texto.replace("<=", "</");
 			
@@ -173,6 +179,7 @@ function ExcelParaSQL(obj) {
 			texto = texto.replace(/e\(/g,  "new ExcelParaSQL().e(")
 						.replace(/ou\(/g,  "new ExcelParaSQL().ou(")
 						.replace(/nao\(/g, "new ExcelParaSQL().nao(");
+			
 			try {
 				let texto_formatado = eval(texto);
 				let poss_col = new Array();
@@ -200,19 +207,22 @@ function ExcelParaSQL(obj) {
 				poss_col2.forEach((coluna) => {
 					if (texto.indexOf(coluna) > -1) _campos_ret.push(coluna);
 				});
+				if (!pseudocodigo && _campos.length) {
+					const aux = todos(texto, _campos);
+					texto = aux[0];
+					_campos_ret = aux[1];
+				}
 			} catch(err) {
 				if (!pseudocodigo && _campos.length) {
-					while (texto.indexOf("'") > -1) texto = texto.replace("'", "");
-					let resultado = new Array();
-					_campos.forEach((campo) => {
-						resultado.push(campo + " LIKE '%" + texto + "%'");
-					});
-					texto = resultado.join(" OR ");
-					_campos_ret = _campos;
-				} else erro = "Erro desconhecido";
+					const aux = todos(texto, _campos);
+					texto = aux[0];
+					_campos_ret = aux[1];
+				}
+				else erro = "Erro desconhecido";
 			}
 		}
 		if (!erro) {
+			texto = texto.toString();
 			while (texto.indexOf("()") > -1) texto = texto.replace("()", "1");
 			while (texto.indexOf("  ") > -1) texto = texto.replace("  ", " ");
 			retorno = {
