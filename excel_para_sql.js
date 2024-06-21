@@ -1,3 +1,9 @@
+/*
+EXCEL PARA SQL © 2024
+Desenvolvido por Reynolds Costa, no Notepad++
+O uso é permitido; a comercialização, proibida.
+*/
+
 function ExcelParaSQL(obj) {
 	let _campos = new Array();
 	
@@ -28,15 +34,34 @@ function ExcelParaSQL(obj) {
 			return ret;
 		}
 		
+		let eData = function(dateString) {
+			const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+			const match = dateString.match(regex);
+			if (!match) return false;
+			const day = parseInt(match[1], 10);
+			const month = parseInt(match[2], 10) - 1;
+			const year = parseInt(match[3], 10);
+			const date = new Date(year, month, day);
+			if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return false;
+			let resultado = [year, month + 1, day];
+			for (let i = 0; i < 3; i++) resultado[i] = resultado[i].toString().padStart(2, "0");
+			return "'" + resultado.join("-") + "'";
+		}
+		
 		let resultado = new Array();
 		arr.forEach((termo) => {
 			if (termo.indexOf("<") > -1 || termo.indexOf(">") > -1) {
 				let operador = termo.indexOf("<") > -1 ? "<" : ">";
 				let partes = termo.split(operador);
 				operador = " " + operador + " ";
+				const data = eData(partes[1]);
 				let aux = partes[1].replace("/", "").replace("(", "").replace(")", "");
-				if (aux != parseFloat(aux)) console.error("Os operadores >, >=, < e <= só estão disponíveis para valores numéricos");
-				if (verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
+				let erro = false;
+				if (aux != parseFloat(aux) && !data) {
+					erro = true;
+					console.error("Os operadores >, >=, < e <= só estão disponíveis para datas e valores numéricos");
+				} else if (data) partes[1] = data;
+				if (!erro && verificar(campos, partes[0])) resultado.push((partes[0] + operador + partes[1]).replace("> /", ">= ").replace("< /", "<= "));
 			} else if (termo.indexOf("=") > -1) {
 				let partes = termo.split("=");
 				if (verificar(campos, partes[0])) resultado.push(parseInt(partes[1]) == partes[1] ? partes[0] + "=" + partes[1] : partes[0] + " LIKE '%" + partes[1].split(" ").join("%") + "%'");
