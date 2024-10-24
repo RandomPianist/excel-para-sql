@@ -82,13 +82,16 @@ function ExcelParaSQL(obj) {
 	}
 	
 	const todos = function(txt, arr_campos, arr_tipos) {
-		txt = txt.toString();
-		while (txt.indexOf("'") > -1) txt = txt.replace("'", "");
-		let resultado = new Array();
-        for (let i = 0; i < arr_campos.length; i++) {
-            resultado.push(arr_tipos[i] ? arr_campos[i] + " LIKE '%" + txt + "%'" : arr_campos[i] + "=" + txt);
+        if (txt) {
+            txt = txt.toString();
+            while (txt.indexOf("'") > -1) txt = txt.replace("'", "");
+            let resultado = new Array();
+            for (let i = 0; i < arr_campos.length; i++) {
+                resultado.push(arr_tipos[i] ? arr_campos[i] + " LIKE '%" + txt + "%'" : arr_campos[i] + "=" + txt);
+            }
+            return [resultado.join(" OR "), arr_campos];
         }
-		return [resultado.join(" OR "), arr_campos];
+        return ["1", arr_campos];        
 	}
 	
 	this.e = function(campos, arr) {
