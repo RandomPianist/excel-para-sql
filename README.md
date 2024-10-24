@@ -12,6 +12,9 @@ ExcelParaSQL({
 <br />
   &nbsp;&nbsp;&nbsp;&nbsp;campos : [] // array de strings com os campos que serão permitidos. Padrão array vazio, permite todos
 <br />
+<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;tipos : [] // array de booleanos que são verdadeiros caso o campo correspondente seja uma string
+<br />
 });
 <br /><br />
 A função retorna a chave "sql", que é a condição SQL respectiva e "campos" que são as colunas que a função encontrou na string.

@@ -6,6 +6,7 @@ O uso é permitido; a comercialização, proibida.
 
 function ExcelParaSQL(obj) {
 	let _campos = new Array();
+    let _tipos = new Array();
 	
 	let contagem = function(texto, char1, char2, _erro, adc) {
 		if (adc === undefined) adc = 0;
@@ -80,14 +81,14 @@ function ExcelParaSQL(obj) {
 		return true;
 	}
 	
-	const todos = function(txt, arr) {
+	const todos = function(txt, arr_campos, arr_tipos) {
 		txt = txt.toString();
 		while (txt.indexOf("'") > -1) txt = txt.replace("'", "");
 		let resultado = new Array();
-		arr.forEach((campo) => {
-			resultado.push(campo + " LIKE '%" + txt + "%'");
-		});
-		return [resultado.join(" OR "), arr];
+        for (let i = 0; i < arr_campos.length; i++) {
+            resultado.push(arr_tipos[i] ? arr_campos[i] + " LIKE '%" + txt + "%'" : arr_campos[i] + "=" + txt);
+        }
+		return [resultado.join(" OR "), arr_campos];
 	}
 	
 	this.e = function(campos, arr) {
@@ -124,7 +125,7 @@ function ExcelParaSQL(obj) {
 			let aviso = "";
 			let aux = false;
 			for (x in obj) {
-				if (["conteudo", "separador", "campos"].indexOf(x) == -1) aviso = 'A chave "' + x + '" não é conhecida';
+				if (["conteudo", "separador", "campos", "tipos"].indexOf(x) == -1) aviso = 'A chave "' + x + '" não é conhecida';
 			}
 			if (aviso) console.warn(aviso);
 			if (typeof obj.conteudo != "string") erro = 'A chave "conteúdo" deve ser uma string';
@@ -148,6 +149,17 @@ function ExcelParaSQL(obj) {
 				if (aux) erro = 'A chave "campos", se declarada, deve ser um array de colunas SQL';
 				else if (obj.campos !== undefined) _campos = obj.campos;
 			}
+            if (!erro) {
+				if (["undefined", "object"].indexOf(typeof obj.tipos) == -1) aux = true;
+				else if (typeof obj.tipos == "object") {
+					obj.tipos.forEach((tipo) => {
+						if (!typeof tipo == "boolean") aux = true;
+					});
+				}
+				if (aux) erro = 'A chave "tipos", se declarada, deve ser um array de booleanos, verdadeiros quando o campo correspondente for uma string';
+				else if (obj.tipos !== undefined) _tipos = obj.tipos;
+			}
+            if (_tipos.length != _campos.length) erro = 'Os arrays "tipos" e "campos" devem ter o mesmo tamanho, pois são correspondentes';
 		} else erro = "Parâmetro não declarado corretamente";
 		
 		if (!erro) {
@@ -233,13 +245,13 @@ function ExcelParaSQL(obj) {
 					if (texto.indexOf(coluna) > -1) _campos_ret.push(coluna);
 				});
 				if (!pseudocodigo && _campos.length) {
-					const aux = todos(texto, _campos);
+					const aux = todos(texto, _campos, _tipos);
 					texto = aux[0];
 					_campos_ret = aux[1];
 				}
 			} catch(err) {
 				if (!pseudocodigo && _campos.length) {
-					const aux = todos(texto, _campos);
+					const aux = todos(texto, _campos, _tipos);
 					texto = aux[0];
 					_campos_ret = aux[1];
 				}
