@@ -10,7 +10,7 @@ ExcelParaSQL({
 <br />
   &nbsp;&nbsp;&nbsp;&nbsp;separador : ",", // char opcional com separador. Padrão ","
 <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;campos : [] // array de strings com os campos que serão permitidos. Padrão array vazio, permite todos
+  &nbsp;&nbsp;&nbsp;&nbsp;campos : [], // array de strings com os campos que serão permitidos. Padrão array vazio, permite todos
 <br />
   &nbsp;&nbsp;&nbsp;&nbsp;tipos : [] // array de booleanos que são verdadeiros caso o campo correspondente seja uma string
 <br />
