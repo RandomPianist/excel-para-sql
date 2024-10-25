@@ -87,7 +87,7 @@ function ExcelParaSQL(obj) {
             while (txt.indexOf("'") > -1) txt = txt.replace("'", "");
             let resultado = new Array();
             for (let i = 0; i < arr_campos.length; i++) {
-                resultado.push(arr_tipos[i] ? arr_campos[i] + " LIKE '%" + txt + "%'" : arr_campos[i] + "=" + txt);
+                if ((!arr_tipos[i] && parseInt(txt) == txt) || arr_tipos[i]) resultado.push(arr_tipos[i] ? arr_campos[i] + " LIKE '%" + txt + "%'" : arr_campos[i] + "=" + txt);
             }
             return [resultado.join(" OR "), arr_campos];
         }
