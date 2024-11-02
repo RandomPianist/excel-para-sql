@@ -51,6 +51,7 @@ function ExcelParaSQL(obj) {
 		
 		let resultado = new Array();
 		arr.forEach((termo) => {
+            if (typeof termo == "object") termo = termo[0];
 			if (termo.indexOf("<") > -1 || termo.indexOf(">") > -1) {
 				let operador = termo.indexOf("<") > -1 ? "<" : ">";
 				let partes = termo.split(operador);
@@ -266,7 +267,7 @@ function ExcelParaSQL(obj) {
 			while (texto.indexOf("()") > -1) texto = texto.replace("()", "1");
 			while (texto.indexOf("  ") > -1) texto = texto.replace("  ", " ");
 			retorno = {
-				sql : texto,
+				sql : encodeURIComponent(texto),
 				campos : _campos_ret
 			};
 		} else console.error(erro);
