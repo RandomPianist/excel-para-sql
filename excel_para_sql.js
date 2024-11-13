@@ -212,7 +212,10 @@ function ExcelParaSQL(obj) {
 				"'e" : "e",
 				"'nao" : "nao",
 				"''" : "'",
-				" " : ""
+				" " : "",
+                "([ou" : "(['ou",
+                "([e" : "(['e",
+                "([nao" : "(['nao"
 			};
 			for (x in substituir) {
 				while (texto.indexOf(x) > -1) texto = texto.replace(x, substituir[x]);
